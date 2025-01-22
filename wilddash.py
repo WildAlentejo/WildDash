@@ -5,8 +5,7 @@ from datetime import datetime
 import time
 from PIL import Image
 from io import BytesIO
-import os
-import plotly.graph_objects as go  # Para criar gráficos profissionais
+import plotly.graph_objects as go
 
 # Chave da API do OpenWeatherMap (substitua pela sua própria chave)
 API_KEY = "e3a6729ad886ce16e51118467f080ed8"
@@ -16,17 +15,6 @@ FORECAST_URL = "http://api.openweathermap.org/data/2.5/forecast"
 # Configuração da página do Streamlit
 st.set_page_config(page_title="Painel da Fazenda", layout="wide")
 st.title("🌾 Painel da Fazenda")
-
-# Função para carregar dados do gado
-def carregar_dados_gado():
-    if os.path.exists("gado.csv"):
-        return pd.read_csv("gado.csv")
-    else:
-        return pd.DataFrame(columns=["Chip", "Raca", "Data_Nascimento", "Peso", "Vacinas", "Observacoes"])
-
-# Função para salvar dados do gado
-def salvar_dados_gado(df):
-    df.to_csv("gado.csv", index=False)
 
 # Entradas do usuário na barra lateral
 st.sidebar.header("Configurações")
@@ -188,65 +176,83 @@ if previsao_clima:
     # Exibir o gráfico
     st.plotly_chart(fig, use_container_width=True)
 
-# Controle de Gado
-st.sidebar.header("🐄 Controle de Gado")
+# Calendário com Eventos
+st.header("📅 Calendário da Fazenda")
 
-# Carregar dados do gado
-df_gado = carregar_dados_gado()
+# Carregar eventos salvos do arquivo
+try:
+    with open("eventos_fazenda.txt", "r") as f:
+        eventos_calendario = [linha.strip().split("|") for linha in f.readlines()]
+except FileNotFoundError:
+    eventos_calendario = []
 
-# Expander para Adicionar Animal
-with st.sidebar.expander("Adicionar Animal", expanded=False):
-    st.subheader("Adicionar Novo Animal")
-    with st.form("form_novo_animal"):
-        col1, col2 = st.columns(2)
+# Adicionar evento ao calendário
+data_evento = st.date_input("Selecione a Data")
+nome_evento = st.text_input("Nome do Evento")
+if st.button("Adicionar Evento"):
+    eventos_calendario.append([str(data_evento), nome_evento])  # Armazenar como uma lista
+    with open("eventos_fazenda.txt", "a") as f:
+        f.write(f"{data_evento}|{nome_evento}\n")
+    st.success(f"Evento '{nome_evento}' adicionado em {data_evento}")
+
+# Exibir Calendário com Opção de Exclusão
+if eventos_calendario:
+    st.write("Próximos Eventos:")
+    for i, evento in enumerate(eventos_calendario):
+        col1, col2 = st.columns([4, 1])
         with col1:
-            chip = st.text_input("Número do Chip")
-            raca = st.text_input("Raça")
-            data_nascimento = st.date_input("Data de Nascimento")
+            st.write(f"- {evento[1]} em {evento[0]}")
         with col2:
-            peso = st.number_input("Peso (kg)", min_value=0.0)
-            vacinas = st.text_input("Vacinas Aplicadas")
-            observacoes = st.text_area("Observações")
-        if st.form_submit_button("Adicionar Animal"):
-            novo_animal = {
-                "Chip": chip,
-                "Raca": raca,
-                "Data_Nascimento": data_nascimento,
-                "Peso": peso,
-                "Vacinas": vacinas,
-                "Observacoes": observacoes
-            }
-            # Usar pd.concat em vez de append
-            df_gado = pd.concat([df_gado, pd.DataFrame([novo_animal])], ignore_index=True)
-            salvar_dados_gado(df_gado)
-            st.success("Animal adicionado com sucesso!")
+            if st.button(f"Excluir {i+1}"):
+                # Remover o evento da lista
+                eventos_calendario.pop(i)
+                # Reescrever o arquivo sem o evento excluído
+                with open("eventos_fazenda.txt", "w") as f:
+                    for ev in eventos_calendario:
+                        f.write(f"{ev[0]}|{ev[1]}\n")
+                st.rerun()  # Atualizar o app para refletir as mudanças
 
-# Expander para Listar Animais
-with st.sidebar.expander("Listar Animais", expanded=False):
-    st.subheader("📋 Lista de Animais")
-    if not df_gado.empty:
-        for index, row in df_gado.iterrows():
-            # Usar st.columns para organizar os detalhes do animal
-            col1, col2 = st.columns(2)
+# Bloco de Notas
+st.header("📝 Bloco de Notas")
+nota = st.text_area("Escreva suas notas aqui")
+if st.button("Salvar Nota"):
+    with open("notas_fazenda.txt", "a") as f:
+        f.write(f"{datetime.now()}: {nota}\n")
+    st.success("Nota salva!")
+
+# Exibir Notas Salvas com Opção de Exclusão
+st.header("📖 Notas Salvas")
+try:
+    with open("notas_fazenda.txt", "r") as f:
+        notas_salvas = f.readlines()
+    if notas_salvas:
+        for i, nota in enumerate(notas_salvas):
+            col1, col2 = st.columns([4, 1])
             with col1:
-                st.write(f"**Chip:** {row['Chip']}")
-                st.write(f"**Raça:** {row['Raca']}")
-                st.write(f"**Data de Nascimento:** {row['Data_Nascimento']}")
+                st.write(nota)
             with col2:
-                st.write(f"**Peso:** {row['Peso']} kg")
-                st.write(f"**Vacinas:** {row['Vacinas']}")
-                st.write(f"**Observações:** {row['Observacoes']}")
-            
-            # Botão para excluir o animal
-            if st.button(f"Excluir {row['Chip']}", key=f"excluir_{index}"):
-                df_gado = df_gado.drop(index)
-                salvar_dados_gado(df_gado)
-                st.rerun()  # Atualizar a lista após exclusão
-            
-            # Adicionar uma linha horizontal para separar os animais
-            st.markdown("---")
+                if st.button(f"Excluir {i+1}", key=f"nota_{i}"):
+                    # Remover a nota da lista
+                    notas_salvas.pop(i)
+                    # Reescrever o arquivo sem a nota excluída
+                    with open("notas_fazenda.txt", "w") as f:
+                        for n in notas_salvas:
+                            f.write(n)
+                    st.rerun()  # Atualizar o app para refletir as mudanças
     else:
-        st.write("Nenhum animal cadastrado ainda.")
+        st.write("Nenhuma nota salva ainda.")
+except FileNotFoundError:
+    st.write("Nenhuma nota salva ainda.")
+
+# Calendário de Plantio
+st.header("🌱 Calendário de Plantio")
+dados_plantio = {
+    "Cultura": ["Tomate", "Cenoura", "Batata", "Alface"],
+    "Mês de Plantio": ["Março", "Abril", "Fevereiro", "Maio"],
+    "Mês de Colheita": ["Agosto", "Julho", "Junho", "Setembro"]
+}
+df_plantio = pd.DataFrame(dados_plantio)
+st.dataframe(df_plantio)
 
 # Feed da Câmera (URL JPG)
 st.header("📷 Feed da Câmera")
