@@ -20,7 +20,7 @@ st.title("🌾 Farm Dashboard")
 # Sidebar for user inputs
 st.sidebar.header("Settings")
 location = st.sidebar.text_input("Enter Farm Location", "Montes Altos, PT")
-camera_url = st.sidebar.text_input("Enter Camera JPG URL", "http://your-camera-ip/image.jpg")
+camera_url = st.sidebar.text_input("Enter Camera JPG URL", "https://www.meteoalentejo.pt/cumulus/mertola/cam.jpg")
 
 # Function to fetch weather data
 def get_weather(city):
