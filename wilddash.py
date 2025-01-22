@@ -20,7 +20,7 @@ st.title("🌾 Painel da Fazenda")
 # Entradas do usuário na barra lateral
 st.sidebar.header("Configurações")
 localizacao = st.sidebar.text_input("Digite a Localização da Fazenda", "Montes Altos, PT")
-url_camera = st.sidebar.text_input("Digite o URL da Câmera JPG", "http://seu-ip-camera/image.jpg")
+url_camera = st.sidebar.text_input("Digite o URL da Câmera JPG", "https://www.meteoalentejo.pt/cumulus/mertola/cam.jpg")
 
 # Função para buscar dados meteorológicos
 def buscar_dados_climaticos(cidade):
