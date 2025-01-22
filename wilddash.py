@@ -264,7 +264,7 @@ if url_camera:
         if resposta.status_code == 200:
             # Converter a imagem para um formato que o Streamlit pode exibir
             imagem = Image.open(BytesIO(resposta.content))
-            st.image(imagem, caption="Última Imagem da Câmera", use_container_width=True)
+            st.image(imagem, caption="Última Imagem da Câmera")#, use_container_width=True)
         else:
             st.warning(f"Não foi possível buscar a imagem. Código de status: {resposta.status_code}")
     except Exception as e:
